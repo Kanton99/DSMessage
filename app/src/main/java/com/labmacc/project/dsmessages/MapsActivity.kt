@@ -26,7 +26,7 @@ import com.labmacc.project.dsmessages.databinding.ActivityMapsBinding
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback{
 
-    private val REQUESTING_LOCATION_UPDATES_KEY: String? = "reqUpKey"
+    private val REQUESTING_LOCATION_UPDATES_KEY: String = "reqUpKey"
     private val MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION: Int = 0
     private val REQUEST_CHECK_SETTINGS: Int = 1
 
@@ -86,12 +86,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback{
                     // ...
                     userLocation = LatLng(location.latitude,location.longitude)
                     Log.i("USER LOCATION","Lat: ${userLocation.latitude} ;Lgt: ${userLocation.longitude}")
+                    mMap.clear()
                     mMap.addMarker(MarkerOptions().position(userLocation))
                     mMap.moveCamera(CameraUpdateFactory.newLatLng(userLocation))
                 }
             }
         }
-        //updateValuesFromBundle(savedInstanceState)
+        updateValuesFromBundle(savedInstanceState)
     }
 
     /**
@@ -105,7 +106,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback{
      */
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
-        var userLocation: LatLng = LatLng(0.0,0.0)
         if (ActivityCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -122,9 +122,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback{
             location: Location? ->
             if (location != null) {
                 userLocation = LatLng(location.latitude,location.longitude)
-                Log.i("USER LOCATION","Lat: ${userLocation.latitude} ;Lgt: ${userLocation.longitude}")
+                /*Log.i("USER LOCATION","Lat: ${userLocation.latitude} ;Lgt: ${userLocation.longitude}")
                 mMap.addMarker(MarkerOptions().position(userLocation))
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(userLocation))
+                mMap.moveCamera(CameraUpdateFactory.newLatLng(userLocation))*/
 
             }else{
                 Log.e("LOCATION","Location not found")
@@ -170,7 +170,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback{
             fastestInterval = 5000
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         }*/
-        val locationRequestBuilder = LocationRequest.Builder(10000)
+        val locationRequestBuilder = LocationRequest.Builder(1000)
         locationRequestBuilder.setPriority(Priority.PRIORITY_HIGH_ACCURACY)
         locationRequest = locationRequestBuilder.build()
     }
@@ -223,6 +223,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback{
         // ...
 
         // Update UI to match restored state
+
         //updateUI()
     }
 
