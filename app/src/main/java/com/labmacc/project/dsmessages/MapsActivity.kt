@@ -26,7 +26,7 @@ import com.labmacc.project.dsmessages.databinding.ActivityMapsBinding
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback{
 
-    private val REQUESTING_LOCATION_UPDATES_KEY: String = "reqUpKey"
+    private val REQUEST_INTERVAL: Long = 500
     private val MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION: Int = 0
     private val REQUEST_CHECK_SETTINGS: Int = 1
 
@@ -36,7 +36,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback{
     private lateinit var locationCallback: LocationCallback
     private var requestingLocationUpdates: Boolean = true
     private lateinit var locationRequest: LocationRequest
-    private lateinit var locationSettingsRequest : LocationSettingsRequest
     private lateinit var userLocation: LatLng
 
     @RequiresApi(Build.VERSION_CODES.S)
@@ -88,11 +87,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback{
                     Log.i("USER LOCATION","Lat: ${userLocation.latitude} ;Lgt: ${userLocation.longitude}")
                     mMap.clear()
                     mMap.addMarker(MarkerOptions().position(userLocation))
-                    mMap.moveCamera(CameraUpdateFactory.newLatLng(userLocation))
+                    mMap.animateCamera(CameraUpdateFactory.newLatLng(userLocation))
                 }
             }
         }
-        updateValuesFromBundle(savedInstanceState)
     }
 
     /**
@@ -106,6 +104,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback{
      */
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
+        mMap.setMinZoomPreference(20.0f)
+        mMap.setMaxZoomPreference(20.0f)
         if (ActivityCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -170,7 +170,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback{
             fastestInterval = 5000
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         }*/
-        val locationRequestBuilder = LocationRequest.Builder(1000)
+        val locationRequestBuilder = LocationRequest.Builder(REQUEST_INTERVAL)
         locationRequestBuilder.setPriority(Priority.PRIORITY_HIGH_ACCURACY)
         locationRequest = locationRequestBuilder.build()
     }
@@ -205,27 +205,5 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback{
     private fun stopLocationUpdates() {
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        outState.putBoolean(REQUESTING_LOCATION_UPDATES_KEY, requestingLocationUpdates)
-        super.onSaveInstanceState(outState)
-    }
-
-    private fun updateValuesFromBundle(savedInstanceState: Bundle?) {
-        savedInstanceState ?: return
-
-        // Update the value of requestingLocationUpdates from the Bundle.
-        if (savedInstanceState.keySet().contains(REQUESTING_LOCATION_UPDATES_KEY)) {
-            requestingLocationUpdates = savedInstanceState.getBoolean(
-                REQUESTING_LOCATION_UPDATES_KEY)
-        }
-
-        // ...
-
-        // Update UI to match restored state
-
-        //updateUI()
-    }
-
 
 }
