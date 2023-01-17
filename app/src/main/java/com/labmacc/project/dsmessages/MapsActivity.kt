@@ -19,12 +19,12 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Build
 import android.os.Bundle
+import android.os.Looper
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -36,11 +36,15 @@ import com.google.android.gms.maps.model.LatLng
  * An activity that displays a map showing the place at the device's current location.
  */
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
+    private val UPDATE_INTERVAL: Long= 500
+    private val requestingLocationUpdates: Boolean = false
     private var map: GoogleMap? = null
     private var cameraPosition: CameraPosition? = null
 
     // The entry point to the Fused Location Provider.
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+    private lateinit var locationRequest: LocationRequest
+    private lateinit var locationCallback: LocationCallback
 
     // A default location (Sydney, Australia) and default zoom to use when location permission is
     // not granted.
@@ -77,7 +81,22 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment?
         mapFragment?.getMapAsync(this)
-    }
+
+        locationCallback = object : LocationCallback(){
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult ?: return
+                    for (location in locationResult.locations){
+                        lastKnownLocation = location
+                        if (lastKnownLocation != null) {
+                            map?.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                                LatLng(lastKnownLocation!!.latitude,
+                                    lastKnownLocation!!.longitude), DEFAULT_ZOOM.toFloat()))
+                        }
+                    }
+                }
+            }
+        }
+
 
     /**
      * Saves the state of the map when the activity is paused.
@@ -110,41 +129,47 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         updateLocationUI()
 
         // Get the current location of the device and set the position of the map.
-        getDeviceLocation()
+        //getDeviceLocation()
+
+        createLocationRequest()
+
+        startLocationUpdates()
+    }
+
+    override fun onResume(){
+        super.onResume()
+        if (requestingLocationUpdates) startLocationUpdates()
+    }
+
+
+    @SuppressLint("MissingPermission")
+    private fun startLocationUpdates() {
+//        fusedLocationProviderClient.requestLocationUpdates(locationRequest,
+//            locationCallback,
+//            Looper.getMainLooper())
+        if(locationPermissionGranted){
+            fusedLocationProviderClient.requestLocationUpdates(
+                locationRequest,
+                locationCallback,
+                Looper.getMainLooper()
+            )
+        }
     }
 
     /**
-     * Gets the current location of the device, and positions the map's camera.
+     * Create a LocationRequest object
      */
-    @SuppressLint("MissingPermission")
-    private fun getDeviceLocation() {
-        /*
-         * Get the best and most recent location of the device, which may be null in rare
-         * cases when a location is not available.
-         */
-        try {
-            if (locationPermissionGranted) {
-                val locationResult = fusedLocationProviderClient.lastLocation
-                locationResult.addOnCompleteListener(this) { task ->
-                    if (task.isSuccessful) {
-                        // Set the map's camera position to the current location of the device.
-                        lastKnownLocation = task.result
-                        if (lastKnownLocation != null) {
-                            map?.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                                LatLng(lastKnownLocation!!.latitude,
-                                    lastKnownLocation!!.longitude), DEFAULT_ZOOM.toFloat()))
-                        }
-                    } else {
-                        Log.d(TAG, "Current location is null. Using defaults.")
-                        Log.e(TAG, "Exception: %s", task.exception)
-                        map?.moveCamera(CameraUpdateFactory
-                            .newLatLngZoom(defaultLocation, DEFAULT_ZOOM.toFloat()))
-                        map?.uiSettings?.isMyLocationButtonEnabled = false
-                    }
-                }
-            }
-        } catch (e: SecurityException) {
-            Log.e("Exception: %s", e.message, e)
+    private fun createLocationRequest() {
+//        val locationRequest = LocationRequest.create()?.apply {
+//            interval = 10000
+//            fastestInterval = 5000
+//            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+//        }
+        locationRequest = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            LocationRequest.Builder(UPDATE_INTERVAL).build()
+        } else {
+            TODO("VERSION.SDK_INT < S")
+
         }
     }
 
@@ -166,6 +191,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION)
         }
     }
+
 
     /**
      * Handles the result of the request for location permissions.
