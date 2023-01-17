@@ -20,7 +20,6 @@ import android.location.Location
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -36,7 +35,7 @@ import com.google.android.gms.maps.model.LatLng
 /**
  * An activity that displays a map showing the place at the device's current location.
  */
-class MapsActivityCurrentPlace : AppCompatActivity(), OnMapReadyCallback {
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private var map: GoogleMap? = null
     private var cameraPosition: CameraPosition? = null
 
@@ -52,14 +51,20 @@ class MapsActivityCurrentPlace : AppCompatActivity(), OnMapReadyCallback {
     // location retrieved by the Fused Location Provider.
     private var lastKnownLocation: Location? = null
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         // Retrieve location and camera position from saved instance state.
         if (savedInstanceState != null) {
-            lastKnownLocation = savedInstanceState.getParcelable(KEY_LOCATION,Location)
-            cameraPosition = savedInstanceState.getParcelable(KEY_CAMERA_POSITION,CameraPosition)
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                lastKnownLocation = savedInstanceState.getParcelable(KEY_LOCATION, Location::class.java)
+                cameraPosition = savedInstanceState.getParcelable(KEY_CAMERA_POSITION, CameraPosition::class.java)
+
+            }else{
+                lastKnownLocation = savedInstanceState.getParcelable(KEY_LOCATION)
+                cameraPosition = savedInstanceState.getParcelable(KEY_CAMERA_POSITION)
+            }
+
         }
 
         // Retrieve the content view that renders the map.
@@ -79,8 +84,15 @@ class MapsActivityCurrentPlace : AppCompatActivity(), OnMapReadyCallback {
      */
     override fun onSaveInstanceState(outState: Bundle) {
         map?.let { map ->
-            outState.putParcelable(KEY_CAMERA_POSITION, map.cameraPosition)
-            outState.putParcelable(KEY_LOCATION, lastKnownLocation)
+            val cameraPos = arrayOf(map.cameraPosition.target.latitude,map.cameraPosition.target.longitude)
+            var lastPos = arrayOf(0.0,0.0)
+            if(lastKnownLocation!=null) {
+                lastPos = arrayOf(lastKnownLocation!!.latitude, lastKnownLocation!!.longitude)
+            }
+//            outState.putParcelable(KEY_CAMERA_POSITION, map.cameraPosition)
+//            outState.putParcelable(KEY_LOCATION, lastKnownLocation)
+            outState.putDoubleArray(KEY_CAMERA_POSITION,cameraPos.toDoubleArray())
+            outState.putDoubleArray(KEY_LOCATION,lastPos.toDoubleArray())
         }
         super.onSaveInstanceState(outState)
     }
@@ -201,7 +213,7 @@ class MapsActivityCurrentPlace : AppCompatActivity(), OnMapReadyCallback {
     }
 
     companion object {
-        private val TAG = MapsActivityCurrentPlace::class.java.simpleName
+        private val TAG = MapsActivity::class.java.simpleName
         private const val DEFAULT_ZOOM = 15
         private const val PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1
 
@@ -209,8 +221,6 @@ class MapsActivityCurrentPlace : AppCompatActivity(), OnMapReadyCallback {
         private const val KEY_CAMERA_POSITION = "camera_position"
         private const val KEY_LOCATION = "location"
 
-        // Used for selecting the current place.
-        private const val M_MAX_ENTRIES = 5
     }
 }
 
