@@ -15,10 +15,14 @@ package com.labmacc.project.dsmessages
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.ComponentName
+import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Build
 import android.os.Bundle
+import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
@@ -31,11 +35,14 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.labmacc.project.dsmessages.MessageStore
 
 /**
  * An activity that displays a map showing the place at the device's current location.
  */
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
+    private lateinit var mService: MessageStore
+    private var mBound: Boolean = false
     private val UPDATE_INTERVAL: Long= 500
     private val requestingLocationUpdates: Boolean = false
     private var map: GoogleMap? = null
@@ -53,6 +60,19 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     // The geographical location where the device is currently located. That is, the last-known
     // location retrieved by the Fused Location Provider.
     private var lastKnownLocation: Location? = null
+
+    //MessageStore connection
+    private val msgStrConnection : ServiceConnection = object: ServiceConnection{
+        override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
+            val binder = p1 as MessageStore.LocalBinder
+            mService = binder.getService()
+            mBound = true
+        }
+
+        override fun onServiceDisconnected(p0: ComponentName?) {
+            mBound = false
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -94,6 +114,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     }
                 }
             }
+
+        //Bind the msgStore Service
+
+
+        Intent(this, MessageStore::class.java).also{
+            intent -> bindService(intent,msgStrConnection, BIND_AUTO_CREATE)
+        }
         }
 
 
@@ -114,6 +141,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
         super.onSaveInstanceState(outState)
     }
+
     /**
      * Manipulates the map when it's available.
      * This callback is triggered when the map is ready to be used.
