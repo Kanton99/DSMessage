@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "692749789946",
+    "firebase_url": "https://dsmessages-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "dsmessages",
+    "storage_bucket": "dsmessages.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:692749789946:android:c33dd9e62da08ebf9b3743",
+        "android_client_info": {
+          "package_name": "com.labmacc.project.dsmessages"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "692749789946-eu1cm77afklpsff0l7gb5lp8g80uat4d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAfRbtX7KCbjCdACjlOXS_BNLTWAc0ujhg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "692749789946-eu1cm77afklpsff0l7gb5lp8g80uat4d.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
