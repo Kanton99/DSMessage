@@ -31,14 +31,14 @@ class MessageStore : Service() {
         messages = mutableMapOf()
 
         //test
-        val msg = com.labmacc.project.dsmessages.Message("Hello World!", 0.0,0.0,0,0,0,0)
+        val msg = Message("Hello World!", 0.0,0.0,0,0,0,0)
 
         writeDatabase(msg)
     }
 
     fun writeDatabase(msg: Message){
         messages.put(msg.msgID,msg)
-        var path: String = "Msg"+msg.msgID
+        var path: String = "Messages/Msg"+msg.msgID
         val myRef = database.getReference(path)
 
         myRef.setValue(msg)
@@ -49,7 +49,7 @@ class MessageStore : Service() {
                 val value = snapshot.getValue(Message::class.java)
                 if(value != null){
                     messages[value.msgID] = value
-                    Log.i(TAG,"Message changed on database")
+                    Log.i(TAG, "Message changed on database $value")
                 }
 
             }
