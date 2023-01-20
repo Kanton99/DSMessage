@@ -101,6 +101,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             .findFragmentById(R.id.map) as SupportMapFragment?
         mapFragment?.getMapAsync(this)
 
+        //location Callback
         locationCallback = object : LocationCallback(){
             override fun onLocationResult(locationResult: LocationResult) {
                 locationResult ?: return
@@ -116,12 +117,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             }
 
         //Bind the msgStore Service
-
-
         Intent(this, MessageStore::class.java).also{
             intent -> bindService(intent,msgStrConnection, BIND_AUTO_CREATE)
-        }
-        }
+            }
+    }
 
 
     /**
