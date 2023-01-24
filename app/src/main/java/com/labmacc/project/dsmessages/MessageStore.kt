@@ -17,7 +17,6 @@ import com.labmacc.project.dsmessages.Message as Message
 
 class MessageStore : Service() {
     private var startMode: Int = 0             // indicates how to behave if the service is killed
-    private var binder: IBinder? = null        // interface for clients that bind
     private var allowRebind: Boolean = false   // indicates whether onRebind should be used
     private var sBinder = LocalBinder()
 
@@ -27,6 +26,8 @@ class MessageStore : Service() {
     private var user:String? = null
 
     private var TAG :String = "Message Store"
+
+    private var lateId = 0
     override fun onCreate() {
         // The service is being created
         Log.i(TAG,"Message Store Created")
@@ -38,17 +39,17 @@ class MessageStore : Service() {
         messages = mutableMapOf()
 
         //test
-        val msg = Message("Hello World4!", 0.0,0.0,0,0,user,0)
-
-        writeDatabase(msg)
     }
 
-    fun writeDatabase(msg: Message){
+    fun writeDatabase(text: String,Lat: Double, Lng: Double){
+        val msg = com.labmacc.project.dsmessages.Message(text,Lat,Lng,0,0,user,lateId)
         messages.put(msg.msgID,msg)
+        lateId++
         var path: String = "Messages/Msg"+msg.msgID
         val myRef = database.getReference(path)
 
         myRef.setValue(msg)
+
 
         myRef.addValueEventListener(object : ValueEventListener
         {
@@ -75,9 +76,9 @@ class MessageStore : Service() {
 
     override fun onBind(intent: Intent): IBinder? {
         // A client is binding to the service with bindService()
-        Log.i(TAG,"Service binded")
+        Log.i(TAG,"Service binded to ${intent.toString()}")
 
-        return binder
+        return sBinder
     }
 
     override fun onUnbind(intent: Intent): Boolean {

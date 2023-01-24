@@ -17,10 +17,14 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DSMessages"
         tools:targetApi="31">
-
+        <activity
+            android:name=".WriteMessage"
+            android:windowSoftInputMode="stateVisible"
+            android:exported="false" />
         <activity
             android:name=".FirebaseUIActivity"
             android:exported="false" />
+
         <service
             android:name=".MessageStore"
             android:enabled="true"

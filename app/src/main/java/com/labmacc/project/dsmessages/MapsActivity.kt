@@ -16,6 +16,7 @@ package com.labmacc.project.dsmessages
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
@@ -25,7 +26,12 @@ import android.os.Bundle
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
+import android.view.View
+import android.view.inputmethod.InputMethodManager
+import androidx.appcompat.widget.AppCompatButton
+import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.AppCompatImageButton
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.firebase.ui.auth.AuthUI
@@ -78,7 +84,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
-
+    //Add message Button
+    private lateinit var button: AppCompatImageButton
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -128,10 +135,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         //Bind the msgStore Service
         Intent(this, MessageStore::class.java).also{
-            intent -> bindService(intent,msgStrConnection, BIND_AUTO_CREATE)
+            //intent -> bindService(intent,msgStrConnection, BIND_AUTO_CREATE)
+            intent ->  startService(intent)
             }
 
-
+        button = findViewById(R.id.placeMessage)
+        button.setOnClickListener{
+            val writeMessage = Intent(this,WriteMessage::class.java)
+            writeMessage.putExtra("Lat",lastKnownLocation?.latitude)
+            writeMessage.putExtra("Lng",lastKnownLocation?.longitude)
+            this.startActivity(writeMessage)
+        }
     }
 
 
@@ -252,7 +266,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         updateLocationUI()
     }
 
-
     /**
      * Updates the map's UI settings based on whether the user has granted location permission.
      */
@@ -288,5 +301,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
 }
+
 
     
