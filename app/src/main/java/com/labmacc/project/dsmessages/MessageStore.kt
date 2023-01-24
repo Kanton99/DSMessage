@@ -12,6 +12,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
+import com.google.firebase.database.ktx.getValue
 import com.google.firebase.ktx.Firebase
 import com.labmacc.project.dsmessages.Message as Message
 
@@ -38,6 +39,23 @@ class MessageStore : Service() {
         database = Firebase.database("https://dsmessages-default-rtdb.europe-west1.firebasedatabase.app/")
         messages = mutableMapOf()
 
+        val dataRef = database.getReference("Messages").orderByKey()
+        dataRef.addValueEventListener(object : ValueEventListener{
+            override fun onDataChange(snapshot: DataSnapshot) {
+                snapshot.children.forEach(
+                    fun(child){
+                        messages.put(child.getValue(com.labmacc.project.dsmessages.Message::class.java)!!.msgID,child.getValue(Message::class.java)!!)
+                        lateId = messages.size
+                    }
+                )
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                TODO("Not yet implemented")
+
+                return
+            }
+        })
         //test
     }
 
@@ -49,24 +67,6 @@ class MessageStore : Service() {
         val myRef = database.getReference(path)
 
         myRef.setValue(msg)
-
-
-        myRef.addValueEventListener(object : ValueEventListener
-        {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val value = snapshot.getValue(Message::class.java)
-                if(value != null){
-                    messages[value.msgID] = value
-                    Log.i(TAG, "Message changed on database $value")
-                }
-
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                Log.w(TAG, "Failed to read value.", error.toException())
-            }
-        }
-        )
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

@@ -193,6 +193,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         if (requestingLocationUpdates) startLocationUpdates()
     }
 
+    override fun onDestroy() {
+        stopService(Intent(this,MessageStore::class.java))
+        super.onDestroy()
+    }
 
     @SuppressLint("MissingPermission")
     private fun startLocationUpdates() {
