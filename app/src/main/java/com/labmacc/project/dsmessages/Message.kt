@@ -8,6 +8,6 @@ data class Message(
     val Lng: Double = 0.0,
     var up: Int = 0,
     var dwn: Int = 0,
-    var uID: Int = 0,
+    var uID: String? = "",
     var msgID: Int = 0
     )

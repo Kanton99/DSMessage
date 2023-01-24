@@ -17,11 +17,14 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DSMessages"
         tools:targetApi="31">
+
+        <activity
+            android:name=".FirebaseUIActivity"
+            android:exported="false" />
         <service
             android:name=".MessageStore"
             android:enabled="true"
-            android:exported="true">
-        </service>
+            android:exported="false" />
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"

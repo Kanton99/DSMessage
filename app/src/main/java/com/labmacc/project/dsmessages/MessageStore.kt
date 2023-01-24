@@ -5,6 +5,8 @@ import android.content.Intent
 import android.os.*
 import android.util.Log
 import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -22,16 +24,21 @@ class MessageStore : Service() {
     private lateinit var messages: MutableMap<Int,Message>
     //Firebase realtime database instance
     private lateinit var database: FirebaseDatabase
+    private var user:String? = null
+
     private var TAG :String = "Message Store"
     override fun onCreate() {
         // The service is being created
         Log.i(TAG,"Message Store Created")
 
+        val auth = Firebase.auth
+        user = auth.uid
+
         database = Firebase.database("https://dsmessages-default-rtdb.europe-west1.firebasedatabase.app/")
         messages = mutableMapOf()
 
         //test
-        val msg = Message("Hello World!", 0.0,0.0,0,0,0,0)
+        val msg = Message("Hello World4!", 0.0,0.0,0,0,user,0)
 
         writeDatabase(msg)
     }

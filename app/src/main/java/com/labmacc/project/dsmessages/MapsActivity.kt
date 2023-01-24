@@ -28,6 +28,9 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.firebase.ui.auth.AuthUI
+import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
+import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -35,6 +38,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.auth.FirebaseAuth
 import com.labmacc.project.dsmessages.MessageStore
 
 /**
@@ -73,6 +77,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             mBound = false
         }
     }
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -116,10 +122,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 }
             }
 
+        //SignIn Activity
+        val signIn = Intent(this,FirebaseUIActivity::class.java)
+        this.startActivity(signIn)
+
         //Bind the msgStore Service
         Intent(this, MessageStore::class.java).also{
             intent -> bindService(intent,msgStrConnection, BIND_AUTO_CREATE)
             }
+
+
     }
 
 
@@ -274,6 +286,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         private const val KEY_LOCATION = "location"
 
     }
+
 }
 
     
