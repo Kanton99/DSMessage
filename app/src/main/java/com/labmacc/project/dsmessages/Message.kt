@@ -4,8 +4,8 @@ import com.google.android.gms.maps.model.LatLng
 
 data class Message(
     val text: String = "",
-    val Lat: Double = 0.0,
-    val Lng: Double = 0.0,
+    val lat: Double = 0.0,
+    val lng: Double = 0.0,
     var up: Int = 0,
     var dwn: Int = 0,
     var uID: String? = "",

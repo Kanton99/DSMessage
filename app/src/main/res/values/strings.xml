@@ -10,4 +10,6 @@
     <string name="invalid_username">Not a valid username</string>
     <string name="invalid_password">Password must be >5 characters</string>
     <string name="login_failed">"Login failed"</string>
+    <string name="channel_name">Message Notification</string>
+    <string name="channel_description">Notification channel for when a user finds a message</string>
 </resources>
