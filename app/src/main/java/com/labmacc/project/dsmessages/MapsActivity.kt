@@ -98,7 +98,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         setContentView(R.layout.activity_maps)
 
         // Prompt the user for permission.
-        getPermissions()
+//        getPermissions()
 
         // Construct a FusedLocationProviderClient.
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
@@ -170,6 +170,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         map.setMaxZoomPreference(20f)
         map.uiSettings.isTiltGesturesEnabled = true
 
+        getPermissions()
         // Turn on the My Location layer and the related control on the map.
         updateLocationUI()
 
@@ -233,11 +234,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         }
         if(neededPermissions.isNotEmpty()) {
-            ActivityCompat.requestPermissions(
-                this,
-                neededPermissions.toTypedArray(),
-                PERMISSION_REQUEST_LOCATION
-            )
+                ActivityCompat.requestPermissions(
+                    this,
+                    neededPermissions.toTypedArray(),
+                    PERMISSION_REQUEST_LOCATION
+                )
         }
     }
 
