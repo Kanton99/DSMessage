@@ -120,7 +120,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                             map?.moveCamera(CameraUpdateFactory.newLatLngZoom(
                                 pos, DEFAULT_ZOOM.toFloat()))
                             if(mBound){
-                                mService.search(pos)
+                                mService.lastLocation = lastKnownLocation!!
                             }
                         }
                     }
@@ -134,7 +134,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         //Bind the msgStore Service
         Intent(this, MessageStore::class.java).also{
             intent -> bindService(intent,msgStrConnection, BIND_AUTO_CREATE)
-
             }
 
         button = findViewById(R.id.placeMessage)
@@ -262,6 +261,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 if (grantResults.isNotEmpty()) {
                     if(Manifest.permission.ACCESS_FINE_LOCATION in permissions) {
                         locationPermissionGranted = grantResults[0] == PackageManager.PERMISSION_GRANTED
+                        startLocationUpdates()
+                        updateLocationUI()
                     }
                     if(Manifest.permission.POST_NOTIFICATIONS in permissions) {
                         notificationPermissionGranted = grantResults[permissions.size-1] == PackageManager.PERMISSION_GRANTED

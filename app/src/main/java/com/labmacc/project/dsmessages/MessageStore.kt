@@ -23,6 +23,8 @@ import com.google.firebase.database.ktx.database
 import com.google.firebase.database.ktx.getValue
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.channels.Channel
+import java.util.*
+import kotlin.concurrent.timer
 import com.labmacc.project.dsmessages.Message as Message
 
 class MessageStore : Service() {
@@ -40,6 +42,7 @@ class MessageStore : Service() {
 
     private var lateId = 0
 
+    lateinit var lastLocation: Location
     //Notifications
     private lateinit var notificationManager: NotificationManager
     override fun onCreate() {
@@ -72,7 +75,12 @@ class MessageStore : Service() {
                 return
             }
         })
-        //test
+
+        Timer().schedule(object: TimerTask(){
+            override fun run() {
+                search()
+            }
+        },1000,10000)
     }
 
     fun writeDatabase(text: String,Lat: Double, Lng: Double){
@@ -93,7 +101,6 @@ class MessageStore : Service() {
     override fun onBind(intent: Intent): IBinder? {
         // A client is binding to the service with bindService()
         Log.i(TAG,"Service binded to ${intent.toString()}")
-
         return sBinder
     }
 
@@ -115,7 +122,9 @@ class MessageStore : Service() {
         fun getService(): MessageStore = this@MessageStore
     }
 
-    fun search(pos: LatLng){
+    fun search(){
+        val pos = LatLng(lastLocation.latitude,
+            lastLocation.longitude)
         messages.forEach(
             fun(msg){
                 val msgLoc = LatLng(msg.value.lat,msg.value.lng)
