@@ -121,7 +121,7 @@ class MessageStore : Service() {
                 val msgLoc = LatLng(msg.value.lat,msg.value.lng)
                 val res = floatArrayOf(0f)
                 Location.distanceBetween(pos.latitude,pos.longitude,msgLoc.latitude,msgLoc.longitude,res)
-                if(res[0]<=DISTANCE && msg.value.uID==user){
+                if(res[0]<=DISTANCE && msg.value.uID!=user){
                     notify(msg.value)
                 }
             }

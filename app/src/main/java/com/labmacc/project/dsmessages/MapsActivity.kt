@@ -98,7 +98,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         setContentView(R.layout.activity_maps)
 
         // Prompt the user for permission.
-//        getPermissions()
+        getPermissions()
 
         // Construct a FusedLocationProviderClient.
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
@@ -170,7 +170,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         map.setMaxZoomPreference(20f)
         map.uiSettings.isTiltGesturesEnabled = true
 
-        getPermissions()
+//        getPermissions()
         // Turn on the My Location layer and the related control on the map.
         updateLocationUI()
 
@@ -200,6 +200,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 locationCallback,
                 Looper.getMainLooper()
             )
+        }else{
+            map?.moveCamera(CameraUpdateFactory.newCameraPosition(
+                cameraPosition?:
+                CameraPosition.fromLatLngZoom(LatLng(0.0,0.0),
+                DEFAULT_ZOOM.toFloat())))
         }
     }
 
@@ -255,12 +260,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             PERMISSION_REQUEST_LOCATION -> {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.isNotEmpty()) {
-                    locationPermissionGranted = grantResults[0]==PackageManager.PERMISSION_GRANTED
-                }
-            }
-            PERMISSION_REQUEST_NOTIFICATION -> {
-                if (grantResults.isNotEmpty()) {
-                    locationPermissionGranted = grantResults[0]==PackageManager.PERMISSION_GRANTED
+                    if(Manifest.permission.ACCESS_FINE_LOCATION in permissions) {
+                        locationPermissionGranted = grantResults[0] == PackageManager.PERMISSION_GRANTED
+                    }
+                    if(Manifest.permission.POST_NOTIFICATIONS in permissions) {
+                        notificationPermissionGranted = grantResults[permissions.size-1] == PackageManager.PERMISSION_GRANTED
+                    }
                 }
             }
             else -> super.onRequestPermissionsResult(requestCode, permissions, grantResults)
