@@ -42,6 +42,7 @@ import com.google.android.gms.maps.model.MarkerOptions
  * An activity that displays a map showing the place at the device's current location.
  */
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
+    private var backgroundPermission: Boolean = false
     private var notificationPermissionGranted: Boolean = false
     private lateinit var mService: MessageStore
     private var mBound: Boolean = false
@@ -211,10 +212,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun createLocationRequest() {
         locationRequest = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             LocationRequest.Builder(UPDATE_INTERVAL).build()
-        } else {
-            TODO("VERSION.SDK_INT < S")
-
-        }
+        } else ({
+            LocationRequest.create()?.apply {
+                interval = 10000
+                fastestInterval = 5000
+                priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+            }
+        }) as LocationRequest
     }
 
     /**
@@ -228,6 +232,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         } else {
             neededPermissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
         }
+
         if(ContextCompat.checkSelfPermission(this.applicationContext,Manifest.permission.POST_NOTIFICATIONS)==PackageManager.PERMISSION_GRANTED){
             notificationPermissionGranted = true
         }else{
@@ -235,6 +240,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 neededPermissions.add(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
+        
+        if(ContextCompat.checkSelfPermission(this.applicationContext,Manifest.permission.ACCESS_BACKGROUND_LOCATION)==PackageManager.PERMISSION_GRANTED){
+            backgroundPermission = true
+        }else{
+            neededPermissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        }
+
         if(neededPermissions.isNotEmpty()) {
                 ActivityCompat.requestPermissions(
                     this,

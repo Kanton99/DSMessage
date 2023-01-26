@@ -156,14 +156,26 @@ class MessageStore : Service() {
                         .setContentTitle("Your found a message")
                         .setContentText(msg.text)
                         .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                        .setSmallIcon(androidx.core.R.drawable.notification_template_icon_bg)
+                        .setSmallIcon(R.drawable.ic_launcher_foreground)
 
                     with(NotificationManagerCompat.from(this)){
                         notify(0,builder.build())
                     }
             }
         } else {
-                TODO("VERSION.SDK_INT < N")
+            try{
+                val builder = NotificationCompat.Builder(this)
+                    .setContentTitle("Your found a message")
+                    .setContentText(msg.text)
+                    .setSmallIcon(R.drawable.ic_launcher_foreground)
+
+                with(NotificationManagerCompat.from(this)){
+                    notify(0,builder.build())
+                }
+
+            }catch (exception: java.lang.Exception){
+                return
+            }
         }
     }
 
