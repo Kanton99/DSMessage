@@ -54,14 +54,8 @@ class FirebaseUIActivity : AppCompatActivity() {
 
             val signInIntent = AuthUI.getInstance().createSignInIntentBuilder().setAvailableProviders(providers).build()
 
-//            signInRequest = BeginSignInRequest.builder()
-//                .setGoogleIdTokenRequestOptions(
-//                    BeginSignInRequest.GoogleIdTokenRequestOptions.builder()
-//                        .setSupported(true)
-//                        .setServerClientId(getString(R.string.))
-//                )
             signInLauncher.launch(signInIntent)
-
+            finish()
         }
 
     }

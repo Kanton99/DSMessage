@@ -15,10 +15,7 @@ package com.labmacc.project.dsmessages
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
@@ -28,17 +25,10 @@ import android.os.Bundle
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
-import android.view.View
-import android.view.inputmethod.InputMethodManager
-import androidx.appcompat.widget.AppCompatButton
-import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatImageButton
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.firebase.ui.auth.AuthUI
-import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
-import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -46,18 +36,15 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.firebase.auth.FirebaseAuth
-import com.labmacc.project.dsmessages.MessageStore
 
 /**
  * An activity that displays a map showing the place at the device's current location.
  */
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
-    private val CHANNEL_ID: String?="Message Found"
     private var notificationPermissionGranted: Boolean = false
     private lateinit var mService: MessageStore
     private var mBound: Boolean = false
-    private val UPDATE_INTERVAL: Long= 50
+    private val UPDATE_INTERVAL: Long= 500
     private val requestingLocationUpdates: Boolean = false
     private var map: GoogleMap? = null
     private var cameraPosition: CameraPosition? = null
@@ -91,25 +78,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     //Add message Button
     private lateinit var button: AppCompatImageButton
 
-    //Notification callback
-    // Register the permissions callback, which handles the user's response to the
-// system permissions dialog. Save the return value, an instance of
-// ActivityResultLauncher. You can use either a val, as shown in this snippet,
-// or a lateinit var in your onAttach() or onCreate() method.
-    val requestPermissionLauncher =
-        registerForActivityResult(RequestPermission()
-        ) { isGranted: Boolean ->
-            if (isGranted) {
-                // Permission is granted. Continue the action or workflow in your
-                // app.
-            } else {
-                // Explain to the user that the feature is unavailable because the
-                // feature requires a permission that the user has denied. At the
-                // same time, respect the user's decision. Don't link to system
-                // settings in an effort to convince the user to change their
-                // decision.
-            }
-        }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -129,7 +97,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         // Retrieve the content view that renders the map.
         setContentView(R.layout.activity_maps)
 
-        getNotificationPermission()
+        // Prompt the user for permission.
+        getPermissions()
+
         // Construct a FusedLocationProviderClient.
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
 
@@ -164,7 +134,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         //Bind the msgStore Service
         Intent(this, MessageStore::class.java).also{
             intent -> bindService(intent,msgStrConnection, BIND_AUTO_CREATE)
-//            intent ->  startService(intent)
+
             }
 
         button = findViewById(R.id.placeMessage)
@@ -182,15 +152,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
      */
     override fun onSaveInstanceState(outState: Bundle) {
         map?.let { map ->
-            val cameraPos = arrayOf(map.cameraPosition.target.latitude,map.cameraPosition.target.longitude)
-            var lastPos = arrayOf(0.0,0.0)
-            if(lastKnownLocation!=null) {
-                lastPos = arrayOf(lastKnownLocation!!.latitude, lastKnownLocation!!.longitude)
-            }
             outState.putParcelable(KEY_CAMERA_POSITION, map.cameraPosition)
             outState.putParcelable(KEY_LOCATION, lastKnownLocation)
-//            outState.putDoubleArray(KEY_CAMERA_POSITION,cameraPos.toDoubleArray())
-//            outState.putDoubleArray(KEY_LOCATION,lastPos.toDoubleArray())
         }
         super.onSaveInstanceState(outState)
     }
@@ -206,8 +169,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         map.setMinZoomPreference(20f)
         map.setMaxZoomPreference(20f)
         map.uiSettings.isTiltGesturesEnabled = true
-        // Prompt the user for permission.
-        getLocationPermission()
 
         // Turn on the My Location layer and the related control on the map.
         updateLocationUI()
@@ -232,9 +193,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     @SuppressLint("MissingPermission")
     private fun startLocationUpdates() {
-//        fusedLocationProviderClient.requestLocationUpdates(locationRequest,
-//            locationCallback,
-//            Looper.getMainLooper())
         if(locationPermissionGranted){
             fusedLocationProviderClient.requestLocationUpdates(
                 locationRequest,
@@ -248,11 +206,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
      * Create a LocationRequest object
      */
     private fun createLocationRequest() {
-//        val locationRequest = LocationRequest.create()?.apply {
-//            interval = 10000
-//            fastestInterval = 5000
-//            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-//        }
         locationRequest = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             LocationRequest.Builder(UPDATE_INTERVAL).build()
         } else {
@@ -264,19 +217,27 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     /**
      * Prompts the user for permission to use the device location.
      */
-    private fun getLocationPermission() {
-        /*
-         * Request location permission, so that we can get the location of the
-         * device. The result of the permission request is handled by a callback,
-         * onRequestPermissionsResult.
-         */
-        if (ContextCompat.checkSelfPermission(this.applicationContext,
-                Manifest.permission.ACCESS_FINE_LOCATION)
+    private fun getPermissions() {
+        val neededPermissions = arrayListOf<String>()
+        if (ContextCompat.checkSelfPermission(this.applicationContext,Manifest.permission.ACCESS_FINE_LOCATION)
             == PackageManager.PERMISSION_GRANTED) {
             locationPermissionGranted = true
         } else {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION)
+            neededPermissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+        if(ContextCompat.checkSelfPermission(this.applicationContext,Manifest.permission.POST_NOTIFICATIONS)==PackageManager.PERMISSION_GRANTED){
+            notificationPermissionGranted = true
+        }else{
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                neededPermissions.add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+        if(neededPermissions.isNotEmpty()) {
+            ActivityCompat.requestPermissions(
+                this,
+                neededPermissions.toTypedArray(),
+                PERMISSION_REQUEST_LOCATION
+            )
         }
     }
 
@@ -288,24 +249,22 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                                             permissions: Array<String>,
                                             grantResults: IntArray) {
         locationPermissionGranted = false
+        notificationPermissionGranted = false
         when (requestCode) {
-            PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION -> {
-
+            PERMISSION_REQUEST_LOCATION -> {
                 // If request is cancelled, the result arrays are empty.
-                if (grantResults.isNotEmpty() &&
-                    grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    locationPermissionGranted = true
+                if (grantResults.isNotEmpty()) {
+                    locationPermissionGranted = grantResults[0]==PackageManager.PERMISSION_GRANTED
                 }
             }
-            PERMISSIONS_REQUEST_POST_NOTIFICATIONS ->{
-                if (grantResults.isNotEmpty() && grantResults[0]==PackageManager.PERMISSION_GRANTED){
-                    notificationPermissionGranted = true
-                    createNotificationChannel()
+            PERMISSION_REQUEST_NOTIFICATION -> {
+                if (grantResults.isNotEmpty()) {
+                    locationPermissionGranted = grantResults[0]==PackageManager.PERMISSION_GRANTED
                 }
             }
             else -> super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         }
-        updateLocationUI()
+        //updateLocationUI()
     }
 
     /**
@@ -324,54 +283,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 map?.isMyLocationEnabled = false
                 map?.uiSettings?.isMyLocationButtonEnabled = false
                 lastKnownLocation = null
-                getLocationPermission()
+                getPermissions()
             }
         } catch (e: SecurityException) {
             Log.e("Exception: %s", e.message, e)
         }
     }
 
-    /**
-     * Prompts the user for permission to use the device location.
-     */
-    private fun getNotificationPermission() {
-        /*
-         * Request location permission, so that we can get the location of the
-         * device. The result of the permission request is handled by a callback,
-         * onRequestPermissionsResult.
-         */
-        if (ContextCompat.checkSelfPermission(this.applicationContext,
-                Manifest.permission.POST_NOTIFICATIONS)
-            == PackageManager.PERMISSION_GRANTED) {
-            notificationPermissionGranted = true
-        } else {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                PERMISSIONS_REQUEST_POST_NOTIFICATIONS)
-        }
-    }
-
-    private fun createNotificationChannel() {
-        // Create the NotificationChannel, but only on API 26+ because
-        // the NotificationChannel class is new and not in the support library
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = getString(R.string.channel_name)
-            val descriptionText = getString(R.string.channel_description)
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
-                description = descriptionText
-            }
-            // Register the channel with the system
-            val notificationManager: NotificationManager =
-                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-        }
-    }
-
     companion object {
         private val TAG = MapsActivity::class.java.simpleName
         private const val DEFAULT_ZOOM = 15
-        private const val PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 1
-        private const val PERMISSIONS_REQUEST_POST_NOTIFICATIONS = 2
+        private const val PERMISSION_REQUEST_LOCATION = 1
+        private const val PERMISSION_REQUEST_NOTIFICATION = 2
         // Keys for storing activity state.
         private const val KEY_CAMERA_POSITION = "camera_position"
         private const val KEY_LOCATION = "location"

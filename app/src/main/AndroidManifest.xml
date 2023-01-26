@@ -2,11 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <application
         android:allowBackup="true"
@@ -18,25 +18,19 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DSMessages"
         tools:targetApi="31">
-        <activity
-            android:name=".WriteMessage"
+
+        <activity android:name=".WriteMessage"
             android:windowSoftInputMode="stateVisible"
             android:exported="false" />
-        <activity
-            android:name=".FirebaseUIActivity"
+        <activity android:name=".FirebaseUIActivity"
             android:exported="false" />
-
-        <service
-            android:name=".MessageStore"
+        <service android:name=".MessageStore"
             android:enabled="true"
             android:exported="false" />
-
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyBMKCPtPWXXMJtAb9hBsjjR9srN4mxnvds" />
-
-        <activity
-            android:name=".MapsActivity"
+        <activity android:name=".MapsActivity"
             android:exported="true"
             android:label="@string/title_activity_maps">
             <intent-filter>
@@ -46,8 +40,7 @@
             </intent-filter>
         </activity>
 
-        <service
-            android:name=".MapsActivity"
+        <service android:name=".MapsActivity"
             android:foregroundServiceType="location">
 
             <!-- Any inner elements would go here. -->
