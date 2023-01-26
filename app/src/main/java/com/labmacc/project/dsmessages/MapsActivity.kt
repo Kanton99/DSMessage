@@ -36,6 +36,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 
 /**
  * An activity that displays a map showing the place at the device's current location.
@@ -44,10 +45,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private var notificationPermissionGranted: Boolean = false
     private lateinit var mService: MessageStore
     private var mBound: Boolean = false
-    private val UPDATE_INTERVAL: Long= 500
     private val requestingLocationUpdates: Boolean = false
     private var map: GoogleMap? = null
     private var cameraPosition: CameraPosition? = null
+    private lateinit var placed:MutableList<Int>
 
     // The entry point to the Fused Location Provider.
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
@@ -97,6 +98,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         // Retrieve the content view that renders the map.
         setContentView(R.layout.activity_maps)
 
+        placed = mutableListOf()
         // Prompt the user for permission.
         getPermissions()
 
@@ -120,8 +122,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                             map?.moveCamera(CameraUpdateFactory.newLatLngZoom(
                                 pos, DEFAULT_ZOOM.toFloat()))
                             if(mBound){
-                                mService.lastLocation = lastKnownLocation!!
+                                mService.lastLocation = pos
                             }
+                            updateMap()
                         }
                     }
                 }
@@ -163,11 +166,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
      */
     override fun onMapReady(map: GoogleMap) {
         this.map = map
-        map.uiSettings.isScrollGesturesEnabled = false
-        map.uiSettings.isZoomControlsEnabled = false
-        map.setMinZoomPreference(20f)
-        map.setMaxZoomPreference(20f)
-        map.uiSettings.isTiltGesturesEnabled = true
 
 //        getPermissions()
         // Turn on the My Location layer and the related control on the map.
@@ -286,9 +284,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             if (locationPermissionGranted) {
                 map?.isMyLocationEnabled = true
                 map?.uiSettings?.isMyLocationButtonEnabled = true
+                map?.uiSettings?.isTiltGesturesEnabled = false
+                map?.uiSettings?.isScrollGesturesEnabled = false
+                map?.uiSettings?.isZoomControlsEnabled = false
+                map?.setMinZoomPreference(DEFAULT_ZOOM.toFloat())
+                map?.setMaxZoomPreference(DEFAULT_ZOOM.toFloat())
             } else {
                 map?.isMyLocationEnabled = false
                 map?.uiSettings?.isMyLocationButtonEnabled = false
+                map?.uiSettings?.isTiltGesturesEnabled = false
+                map?.uiSettings?.isScrollGesturesEnabled = false
+                map?.uiSettings?.isZoomControlsEnabled = false
                 lastKnownLocation = null
                 getPermissions()
             }
@@ -297,11 +303,21 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
+    private fun updateMap(){
+        if(map!=null) {
+            mService.messages.forEach { entry ->
+                if (entry.key !in placed) {
+                    map?.addMarker(MarkerOptions().position(LatLng(entry.value.lat,entry.value.lng)))
+                    placed.add(entry.key)
+                }
+            }
+        }
+    }
     companion object {
         private val TAG = MapsActivity::class.java.simpleName
-        private const val DEFAULT_ZOOM = 15
+        private const val DEFAULT_ZOOM = 20
+        private const val UPDATE_INTERVAL: Long= 10
         private const val PERMISSION_REQUEST_LOCATION = 1
-        private const val PERMISSION_REQUEST_NOTIFICATION = 2
         // Keys for storing activity state.
         private const val KEY_CAMERA_POSITION = "camera_position"
         private const val KEY_LOCATION = "location"

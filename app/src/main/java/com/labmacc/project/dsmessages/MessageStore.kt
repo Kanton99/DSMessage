@@ -32,7 +32,7 @@ class MessageStore : Service() {
     private var allowRebind: Boolean = false   // indicates whether onRebind should be used
     private var sBinder = LocalBinder()
 
-    private lateinit var messages: MutableMap<Int,Message>
+    lateinit var messages: MutableMap<Int,Message>
     //Firebase realtime database instance
     private lateinit var database: FirebaseDatabase
     private var user:String? = null
@@ -42,7 +42,9 @@ class MessageStore : Service() {
 
     private var lateId = 0
 
-    lateinit var lastLocation: Location
+    lateinit var lastLocation: LatLng
+
+    private lateinit var notified: MutableList<Int>
     //Notifications
     private lateinit var notificationManager: NotificationManager
     override fun onCreate() {
@@ -54,7 +56,7 @@ class MessageStore : Service() {
 
         val auth = Firebase.auth
         user = auth.uid
-
+        lastLocation = LatLng(0.0,0.0)
         database = Firebase.database("https://dsmessages-default-rtdb.europe-west1.firebasedatabase.app/")
         messages = mutableMapOf()
 
@@ -76,6 +78,7 @@ class MessageStore : Service() {
             }
         })
 
+        notified = arrayListOf()
         Timer().schedule(object: TimerTask(){
             override fun run() {
                 search()
@@ -116,6 +119,8 @@ class MessageStore : Service() {
 
     override fun onDestroy() {
         // The service is no longer used and is being destroyed
+        Timer().purge()
+        Timer().cancel()
     }
 
     inner class LocalBinder : Binder(){
@@ -130,8 +135,9 @@ class MessageStore : Service() {
                 val msgLoc = LatLng(msg.value.lat,msg.value.lng)
                 val res = floatArrayOf(0f)
                 Location.distanceBetween(pos.latitude,pos.longitude,msgLoc.latitude,msgLoc.longitude,res)
-                if(res[0]<=DISTANCE && msg.value.uID!=user){
+                if(res[0]<=DISTANCE && msg.value.uID!=user && msg.value.msgID !in notified){
                     notify(msg.value)
+                    notified.add(msg.value.msgID)
                 }
             }
         )
