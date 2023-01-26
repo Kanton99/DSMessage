@@ -10,6 +10,7 @@ import android.content.Intent
 import android.location.Location
 import android.os.*
 import android.util.Log
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.google.android.gms.maps.model.LatLng
@@ -87,6 +88,10 @@ class MessageStore : Service() {
     }
 
     fun writeDatabase(text: String,Lat: Double, Lng: Double){
+        if(user==null){
+            Toast.makeText(this,"No user found",Toast.LENGTH_SHORT).show()
+            return
+        }
         val msg = Message(text,Lat,Lng,0,0,user,lateId)
         messages[msg.msgID] = msg
         lateId++
