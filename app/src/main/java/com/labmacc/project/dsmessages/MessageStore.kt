@@ -168,6 +168,7 @@ class MessageStore : Service() {
                     .setContentTitle("Your found a message")
                     .setContentText(msg.text)
                     .setSmallIcon(R.drawable.ic_launcher_foreground)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
                 with(NotificationManagerCompat.from(this)){
                     notify(0,builder.build())

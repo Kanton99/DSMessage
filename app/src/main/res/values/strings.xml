@@ -13,4 +13,7 @@
     <string name="channel_name">Message Notification</string>
     <string name="channel_description">Notification channel for when a user finds a message</string>
     <string name="notification_channel_id">Message Notification ID</string>
+    <string name="permission_notification_rationale">Enable app\'s access to notification in system settings</string>
+    <string name="ok">OK</string>
+    <string name="cancel">CANCEL</string>
 </resources>

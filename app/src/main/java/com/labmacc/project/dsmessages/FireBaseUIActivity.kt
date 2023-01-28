@@ -28,14 +28,6 @@ class FirebaseUIActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?, persistentState: PersistableBundle?) {
         super.onCreate(savedInstanceState, persistentState)
 
-//        auth = Firebase.auth
-//        val providers = arrayListOf(
-//            AuthUI.IdpConfig.GoogleBuilder().build()
-//        )
-//
-//        val signInIntent = AuthUI.getInstance().createSignInIntentBuilder().setAvailableProviders(providers).build()
-//
-//        signInLauncher.launch(signInIntent)
     }
 
     public override fun onStart() {

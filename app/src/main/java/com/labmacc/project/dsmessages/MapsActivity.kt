@@ -19,12 +19,15 @@ import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.location.Location
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.os.Looper
+import android.provider.Settings
 import android.util.Log
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatImageButton
 import androidx.core.app.ActivityCompat
@@ -34,13 +37,12 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.*
 
 /**
  * An activity that displays a map showing the place at the device's current location.
  */
+@Suppress("DEPRECATION")
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private var backgroundPermission: Boolean = false
     private var notificationPermissionGranted: Boolean = false
@@ -80,6 +82,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     //Add message Button
     private lateinit var button: AppCompatImageButton
 
+    //Notification range
+    private lateinit var range: Circle
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -101,7 +106,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         placed = mutableListOf()
         // Prompt the user for permission.
-        getPermissions()
+        //getPermissions()
 
         // Construct a FusedLocationProviderClient.
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
@@ -114,7 +119,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         //location Callback
         locationCallback = object : LocationCallback(){
             override fun onLocationResult(locationResult: LocationResult) {
-                locationResult ?: return
+                locationResult
                     for (location in locationResult.locations){
                         lastKnownLocation = location
                         if (lastKnownLocation != null) {
@@ -149,6 +154,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
+    @SuppressLint("NewApi")
+    override fun onStart() {
+        super.onStart()
+
+        getPermissions()
+    }
 
     /**
      * Saves the state of the map when the activity is paused.
@@ -168,6 +179,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onMapReady(map: GoogleMap) {
         this.map = map
 
+        range = map.addCircle(CircleOptions().center(LatLng(0.0,0.0)).radius(10.0).strokeColor(Color.BLUE).fillColor(Color.TRANSPARENT))
 //        getPermissions()
         // Turn on the My Location layer and the related control on the map.
         updateLocationUI()
@@ -212,13 +224,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun createLocationRequest() {
         locationRequest = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             LocationRequest.Builder(UPDATE_INTERVAL).build()
-        } else ({
-            LocationRequest.create()?.apply {
+        } else {
+            LocationRequest.create().apply {
                 interval = 10000
                 fastestInterval = 5000
                 priority = LocationRequest.PRIORITY_HIGH_ACCURACY
             }
-        }) as LocationRequest
+        }
     }
 
     /**
@@ -226,33 +238,38 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
      */
     private fun getPermissions() {
         val neededPermissions = arrayListOf<String>()
-        if (ContextCompat.checkSelfPermission(this.applicationContext,Manifest.permission.ACCESS_FINE_LOCATION)
-            == PackageManager.PERMISSION_GRANTED) {
-            locationPermissionGranted = true
-        } else {
-            neededPermissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
-        }
-
-        if(ContextCompat.checkSelfPermission(this.applicationContext,Manifest.permission.POST_NOTIFICATIONS)==PackageManager.PERMISSION_GRANTED){
-            notificationPermissionGranted = true
-        }else{
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                neededPermissions.add(Manifest.permission.POST_NOTIFICATIONS)
+        when (PackageManager.PERMISSION_GRANTED) {
+            ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION) -> {
+                locationPermissionGranted = true
             }
-        }
-        
-        if(ContextCompat.checkSelfPermission(this.applicationContext,Manifest.permission.ACCESS_BACKGROUND_LOCATION)==PackageManager.PERMISSION_GRANTED){
-            backgroundPermission = true
-        }else{
-            neededPermissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+            else -> neededPermissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
         }
 
-        if(neededPermissions.isNotEmpty()) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    neededPermissions.toTypedArray(),
-                    PERMISSION_REQUEST_LOCATION
-                )
+        when (PackageManager.PERMISSION_GRANTED) {
+            ContextCompat.checkSelfPermission(this,Manifest.permission.POST_NOTIFICATIONS) -> {
+                notificationPermissionGranted = true
+            }
+            else -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                neededPermissions.add(Manifest.permission.POST_NOTIFICATIONS)
+            }else{
+                AlertDialog.Builder(this).setTitle(R.string.app_name)
+                    .setMessage(R.string.permission_notification_rationale).setCancelable(false)
+                    .setPositiveButton(R.string.ok){_,_->
+                        val settingsIntent: Intent =
+                            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                                .putExtra(Settings.EXTRA_CHANNEL_ID, R.string.notification_channel_id)
+                        startActivity(settingsIntent)
+                    }.show()
+
+            }
+
+        }
+
+        if(neededPermissions.isNotEmpty()){
+            ActivityCompat.requestPermissions(this,neededPermissions.toTypedArray(),
+                PERMISSION_REQUEST)
         }
     }
 
@@ -266,7 +283,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         locationPermissionGranted = false
         notificationPermissionGranted = false
         when (requestCode) {
-            PERMISSION_REQUEST_LOCATION -> {
+            PERMISSION_REQUEST -> {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.isNotEmpty()) {
                     if(Manifest.permission.ACCESS_FINE_LOCATION in permissions) {
@@ -275,13 +292,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                         updateLocationUI()
                     }
                     if(Manifest.permission.POST_NOTIFICATIONS in permissions) {
-                        notificationPermissionGranted = grantResults[permissions.size-1] == PackageManager.PERMISSION_GRANTED
+                        notificationPermissionGranted = grantResults[permissions.indexOf(Manifest.permission.POST_NOTIFICATIONS)] == PackageManager.PERMISSION_GRANTED
                     }
                 }
             }
             else -> super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         }
-        //updateLocationUI()
     }
 
     /**
@@ -308,7 +324,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 map?.uiSettings?.isScrollGesturesEnabled = false
                 map?.uiSettings?.isZoomControlsEnabled = false
                 lastKnownLocation = null
-                getPermissions()
+                //getPermissions()
             }
         } catch (e: SecurityException) {
             Log.e("Exception: %s", e.message, e)
@@ -324,12 +340,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 }
             }
         }
+        if(lastKnownLocation!=null){
+            range.center = LatLng(lastKnownLocation!!.latitude, lastKnownLocation!!.longitude)
+        }
     }
     companion object {
         private val TAG = MapsActivity::class.java.simpleName
         private const val DEFAULT_ZOOM = 20
         private const val UPDATE_INTERVAL: Long= 10
-        private const val PERMISSION_REQUEST_LOCATION = 1
+        private const val PERMISSION_REQUEST = 1
         // Keys for storing activity state.
         private const val KEY_CAMERA_POSITION = "camera_position"
         private const val KEY_LOCATION = "location"
