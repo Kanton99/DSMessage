@@ -15,7 +15,15 @@
       },
       "oauth_client": [
         {
-          "client_id": "692749789946-eu1cm77afklpsff0l7gb5lp8g80uat4d.apps.googleusercontent.com",
+          "client_id": "692749789946-2l33gob48s9c7ka4ppeki2klsl22dbp4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.labmacc.project.dsmessages",
+            "certificate_hash": "c8e6982d2ee0a686e56da35c621fd002fa78ef7e"
+          }
+        },
+        {
+          "client_id": "692749789946-5k9uedk0dr9jsiujqgb7efmbipds8qp5.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
@@ -28,7 +36,7 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "692749789946-eu1cm77afklpsff0l7gb5lp8g80uat4d.apps.googleusercontent.com",
+              "client_id": "692749789946-5k9uedk0dr9jsiujqgb7efmbipds8qp5.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

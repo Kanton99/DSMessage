@@ -3,6 +3,8 @@ package com.labmacc.project.dsmessages
 import android.os.Bundle
 import android.os.PersistableBundle
 import android.util.Log
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
@@ -62,6 +64,10 @@ class FirebaseUIActivity : AppCompatActivity() {
             // sign-in flow using the back button. Otherwise check
             // response.getError().getErrorCode() and handle the error.
             // ...
+            AlertDialog.Builder(this)
+                .setTitle(R.string.app_name)
+                .setMessage("Unable to login, please try restarting the app")
+                .setPositiveButton(R.string.ok){_,_->}
         }
     }
 
