@@ -23,6 +23,14 @@
           }
         },
         {
+          "client_id": "692749789946-4q0sm22dmh8ab02agrvveok0qo57g58v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.labmacc.project.dsmessages",
+            "certificate_hash": "5e0bdd8ada39833901674d41b883a8152098f1a7"
+          }
+        },
+        {
           "client_id": "692749789946-5k9uedk0dr9jsiujqgb7efmbipds8qp5.apps.googleusercontent.com",
           "client_type": 3
         }

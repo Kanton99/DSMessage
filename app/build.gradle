@@ -7,6 +7,14 @@ plugins {
 }
 
 android {
+    signingConfigs {
+        release {
+            storeFile file('D:\\Android\\Dev\\keys\\App_sign\\app_signature.jks')
+            storePassword 'Scenziato99!'
+            keyAlias 'key0'
+            keyPassword 'Scenziato99!'
+        }
+    }
     namespace 'com.labmacc.project.dsmessages'
     compileSdk 33
 
@@ -24,6 +32,8 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            debuggable true
+            signingConfig signingConfigs.release
         }
     }
     compileOptions {
