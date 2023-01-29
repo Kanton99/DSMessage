@@ -69,7 +69,7 @@ class MessageStore : Service() {
                         val value = child.getValue(Message::class.java)!!
                         val key = value.msgID
                         messages[key] = value
-                        lateId = if(key>lateId) key+1 else lateId
+                        lateId = if(key>=lateId) key+1 else lateId
                     }
                 )
             }
@@ -80,11 +80,6 @@ class MessageStore : Service() {
         })
 
         notified = arrayListOf()
-        Timer().schedule(object: TimerTask(){
-            override fun run() {
-                search()
-            }
-        },1000,10000)
     }
 
     fun writeDatabase(text: String,Lat: Double, Lng: Double){
@@ -122,11 +117,6 @@ class MessageStore : Service() {
         // after onUnbind() has already been called
     }
 
-    override fun onDestroy() {
-        // The service is no longer used and is being destroyed
-        Timer().purge()
-        Timer().cancel()
-    }
 
     inner class LocalBinder : Binder(){
         fun getService(): MessageStore = this@MessageStore
