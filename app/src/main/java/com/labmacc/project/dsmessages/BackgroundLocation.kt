@@ -21,8 +21,8 @@ import java.util.*
 class BackgroundLocation : Service() {
     var lastKnownLocation: Location? = null
     private lateinit var locationRequest: LocationRequest
-    private val locationPermissionGranted: Boolean = false
-    lateinit var fusedLocationClient: FusedLocationProviderClient
+    private val locationPermissionGranted: Boolean = true
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     private lateinit var locationCallback: LocationCallback
 
@@ -46,6 +46,7 @@ class BackgroundLocation : Service() {
 
     override fun onCreate() {
         super.onCreate()
+
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         createLocationRequest()
@@ -53,6 +54,7 @@ class BackgroundLocation : Service() {
         locationCallback = object : LocationCallback(){
             override fun onLocationResult(p0: LocationResult) {
                 super.onLocationResult(p0)
+                Log.i("BACKGROUND LOCATION","found your location")
                 for (location in p0.locations) {
                     lastKnownLocation = location
                     if (lastKnownLocation != null) {
@@ -62,12 +64,14 @@ class BackgroundLocation : Service() {
                         )
                         if (mBound) {
                             mService.lastLocation = pos
+                            mService.search()
                         }
                     }
                 }
             }
         }
 
+        startLocationUpdates()
         Intent(this, MessageStore::class.java).also { intent ->
             bindService(intent, msgStrConnection, BIND_AUTO_CREATE)
         }
@@ -110,7 +114,7 @@ class BackgroundLocation : Service() {
             fusedLocationClient.requestLocationUpdates(
                 locationRequest,
                 locationCallback,
-                Looper.getMainLooper()
+                Looper.myLooper()
             )
         }
     }

@@ -19,20 +19,18 @@ import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
-import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.location.Location
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.os.IBinder
-import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import android.view.View
 import android.widget.Button
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.AppCompatButton
 import androidx.appcompat.widget.AppCompatImageButton
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -42,46 +40,55 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
+import java.util.*
 
 /**
  * An activity that displays a map showing the place at the device's current location.
  */
 @Suppress("DEPRECATION")
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
+
+    //Permissions
     private var backgroundPermission: Boolean = false
     private var notificationPermissionGranted: Boolean = false
-    private lateinit var mService: MessageStore
-    private var mBound: Boolean = false
-    private val requestingLocationUpdates: Boolean = false
+    private var locationPermissionGranted = false
+
+    //MessageStore connection
+    private lateinit var messageStore: MessageStore
+    private var mStoreBound: Boolean = false
+    private val msgStrConnection : ServiceConnection = object: ServiceConnection{
+        override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
+            val binder = p1 as MessageStore.LocalBinder
+            messageStore = binder.getService()
+            mStoreBound = true
+        }
+
+        override fun onServiceDisconnected(p0: ComponentName?) {
+            mStoreBound = false
+        }
+    }
+
+    //Location Service connection
+    private lateinit var location: BackgroundLocation
+    private var bLocBound: Boolean = false
+    private val locationConnection : ServiceConnection = object: ServiceConnection{
+        override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
+            val binder = p1 as BackgroundLocation.LocalBinder
+            bLocBound = true
+            location = binder.getService()
+        }
+
+        override fun onServiceDisconnected(p0: ComponentName?) {
+            bLocBound = false
+        }
+    }
+
     private var map: GoogleMap? = null
     private var cameraPosition: CameraPosition? = null
     private lateinit var placed:MutableList<Int>
 
-    // The entry point to the Fused Location Provider.
-    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
-    private lateinit var locationRequest: LocationRequest
-    private lateinit var locationCallback: LocationCallback
-
-    // A default location (Sydney, Australia) and default zoom to use when location permission is
-    // not granted.
-    private var locationPermissionGranted = false
-
-    // The geographical location where the device is currently located. That is, the last-known
-    // location retrieved by the Fused Location Provider.
+    // The last known geographical location where the device is currently located.
     private var lastKnownLocation: Location? = null
-
-    //MessageStore connection
-    private val msgStrConnection : ServiceConnection = object: ServiceConnection{
-        override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
-            val binder = p1 as MessageStore.LocalBinder
-            mService = binder.getService()
-            mBound = true
-        }
-
-        override fun onServiceDisconnected(p0: ComponentName?) {
-            mBound = false
-        }
-    }
 
     //Add message Button
     private lateinit var button: AppCompatImageButton
@@ -89,19 +96,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     //Notification range
     private lateinit var range: Circle
 
+    //Update UI
+    private lateinit var mHandler: Handler
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-
         // Retrieve location and camera position from saved instance state.
         if (savedInstanceState != null) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                lastKnownLocation = savedInstanceState.getParcelable(KEY_LOCATION, Location::class.java)
-                cameraPosition = savedInstanceState.getParcelable(KEY_CAMERA_POSITION,CameraPosition::class.java)
-
+            cameraPosition = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                savedInstanceState.getParcelable(KEY_CAMERA_POSITION,CameraPosition::class.java)
             } else {
-                lastKnownLocation = savedInstanceState.getParcelable(KEY_LOCATION)
-                cameraPosition = savedInstanceState.getParcelable(KEY_CAMERA_POSITION)
+                savedInstanceState.getParcelable(KEY_CAMERA_POSITION)
             }
 
         }
@@ -124,41 +130,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
 
         placed = mutableListOf()
-        // Prompt the user for permission.
-        //getPermissions()
-
-        // Construct a FusedLocationProviderClient.
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
 
         // Build the map.
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment?
         mapFragment?.getMapAsync(this)
-
-        //location Callback
-        locationCallback = object : LocationCallback() {
-            override fun onLocationResult(locationResult: LocationResult) {
-                locationResult
-                for (location in locationResult.locations) {
-                    lastKnownLocation = location
-                    if (lastKnownLocation != null) {
-                        val pos = LatLng(
-                            lastKnownLocation!!.latitude,
-                            lastKnownLocation!!.longitude
-                        )
-                        map?.moveCamera(
-                            CameraUpdateFactory.newLatLngZoom(
-                                pos, DEFAULT_ZOOM.toFloat()
-                            )
-                        )
-                        if (mBound) {
-                            mService.lastLocation = pos
-                        }
-                        updateMap()
-                    }
-                }
-            }
-        }
 
         //SignIn Activity
         val signIn = Intent(this, FirebaseUIActivity::class.java)
@@ -169,6 +145,27 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             bindService(intent, msgStrConnection, BIND_AUTO_CREATE)
         }
 
+        mHandler = Handler()
+        startUIUpdate();
+    }
+
+    var mStatusChecker: Runnable = object : Runnable {
+        override fun run() {
+            try {
+                // Perform your task here
+                updateMap()
+            } finally {
+                mHandler.postDelayed(this, DELAY)
+            }
+        }
+    }
+
+    private fun startUIUpdate() {
+        mStatusChecker.run()
+    }
+
+    private fun stopUIUpdate() {
+        mHandler.removeCallbacks(mStatusChecker)
     }
 
     @SuppressLint("NewApi")
@@ -196,58 +193,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onMapReady(map: GoogleMap) {
         this.map = map
 
-//        getPermissions()
-        // Turn on the My Location layer and the related control on the map.
         updateLocationUI()
 
-        // Get the current location of the device and set the position of the map.
-        //getDeviceLocation()
-
-        createLocationRequest()
-
-        startLocationUpdates()
     }
 
     override fun onResume(){
         super.onResume()
-        if (requestingLocationUpdates) startLocationUpdates()
-        if(map!=null) updateMap()
+        if(map!=null) startUIUpdate()
     }
 
     override fun onDestroy() {
-        stopService(Intent(this,MessageStore::class.java))
+        stopUIUpdate()
+        unbindService(locationConnection)
+        unbindService(msgStrConnection)
         super.onDestroy()
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun startLocationUpdates() {
-        if(locationPermissionGranted){
-            fusedLocationProviderClient.requestLocationUpdates(
-                locationRequest,
-                locationCallback,
-                Looper.getMainLooper()
-            )
-        }else{
-            map?.moveCamera(CameraUpdateFactory.newCameraPosition(
-                cameraPosition?:
-                CameraPosition.fromLatLngZoom(LatLng(0.0,0.0),
-                DEFAULT_ZOOM.toFloat())))
-        }
-    }
-
-    /**
-     * Create a LocationRequest object
-     */
-    private fun createLocationRequest() {
-        locationRequest = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            LocationRequest.Builder(UPDATE_INTERVAL).build()
-        } else {
-            LocationRequest.create().apply {
-                interval = 10000
-                fastestInterval = 5000
-                priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-            }
-        }
     }
 
     /**
@@ -258,6 +217,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         when (PackageManager.PERMISSION_GRANTED) {
             ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION) -> {
                 locationPermissionGranted = true
+                val intent = Intent(this,BackgroundLocation::class.java)
+                startService(intent)
+                bindService(intent,locationConnection, BIND_AUTO_CREATE)
             }
             else -> neededPermissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
         }
@@ -310,7 +272,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 if (grantResults.isNotEmpty()) {
                     if(Manifest.permission.ACCESS_FINE_LOCATION in permissions) {
                         locationPermissionGranted = grantResults[0] == PackageManager.PERMISSION_GRANTED
-                        startLocationUpdates()
+                        val intent = Intent(this,BackgroundLocation::class.java)
+                        startService(intent)
+                        bindService(intent,locationConnection, BIND_AUTO_CREATE)
                         updateLocationUI()
                     }
                     if(Manifest.permission.POST_NOTIFICATIONS in permissions) {
@@ -354,24 +318,37 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun updateMap(){
-        if(map!=null) {
-            map!!.clear()
-            range = map!!.addCircle(CircleOptions().center(LatLng(0.0,0.0)).radius(10.0).strokeColor(Color.BLUE).fillColor(Color.TRANSPARENT))
-            mService.messages.forEach { entry ->
-                    val marker = map!!.addMarker(MarkerOptions()
-                        .position(LatLng(entry.value.lat,entry.value.lng))
-                    )
+        if(bLocBound) {
+            lastKnownLocation = location.lastKnownLocation
+            var pos = LatLng(0.0,0.0)
+            if(lastKnownLocation!=null){
+                pos = LatLng(lastKnownLocation!!.latitude, lastKnownLocation!!.longitude)
             }
-        }
-        if(lastKnownLocation!=null){
-            range.center = LatLng(lastKnownLocation!!.latitude, lastKnownLocation!!.longitude)
+            if (map != null) {
+                map!!.clear()
+                map!!.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                    pos,
+                    DEFAULT_ZOOM
+                ))
+                range = map!!.addCircle(
+                    CircleOptions().center(LatLng(0.0, 0.0)).radius(10.0).strokeColor(Color.BLUE)
+                        .fillColor(Color.TRANSPARENT)
+                        .center(pos)
+                )
+                messageStore.messages.forEach { entry ->
+                    val marker = map!!.addMarker(
+                        MarkerOptions()
+                            .position(LatLng(entry.value.lat, entry.value.lng))
+                    )
+                }
+            }
         }
     }
 
     companion object {
         private val TAG = MapsActivity::class.java.simpleName
-        private const val DEFAULT_ZOOM = 20
-        private const val UPDATE_INTERVAL: Long= 10
+        private const val DEFAULT_ZOOM = 20f
+        private const val DELAY: Long= 100
         private const val PERMISSION_REQUEST = 1
         // Keys for storing activity state.
         private const val KEY_CAMERA_POSITION = "camera_position"
