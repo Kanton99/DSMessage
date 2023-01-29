@@ -12,8 +12,6 @@ import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import com.google.android.gms.location.*
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import java.util.*
 
