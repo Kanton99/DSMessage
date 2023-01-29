@@ -25,6 +25,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.DSMessages"
         tools:targetApi="33">
+        <service
+            android:name=".BackgroundLocation"
+            android:enabled="true"
+            android:exported="true"></service>
+
         <activity
             android:name=".MessageView"
             android:exported="false" />
@@ -38,9 +43,10 @@
         <activity
             android:name=".FirebaseUIActivity"
             android:exported="false" />
+        <activity
+            android:name=".MySettings"
+            android:exported="false" />
 
-        <activity android:name=".MySettings"
-            android:exported="false"/>
         <service
             android:name=".MessageStore"
             android:enabled="true"

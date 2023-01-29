@@ -196,7 +196,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onMapReady(map: GoogleMap) {
         this.map = map
 
-        range = map.addCircle(CircleOptions().center(LatLng(0.0,0.0)).radius(10.0).strokeColor(Color.BLUE).fillColor(Color.TRANSPARENT))
 //        getPermissions()
         // Turn on the My Location layer and the related control on the map.
         updateLocationUI()
@@ -357,6 +356,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun updateMap(){
         if(map!=null) {
             map!!.clear()
+            range = map!!.addCircle(CircleOptions().center(LatLng(0.0,0.0)).radius(10.0).strokeColor(Color.BLUE).fillColor(Color.TRANSPARENT))
             mService.messages.forEach { entry ->
                     val marker = map!!.addMarker(MarkerOptions()
                         .position(LatLng(entry.value.lat,entry.value.lng))
@@ -367,6 +367,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             range.center = LatLng(lastKnownLocation!!.latitude, lastKnownLocation!!.longitude)
         }
     }
+
     companion object {
         private val TAG = MapsActivity::class.java.simpleName
         private const val DEFAULT_ZOOM = 20
@@ -378,7 +379,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     }
 
-    fun openMyMessages(view: View){
+    private fun openMyMessages(view: View){
         val intent = Intent(this,MyMessages::class.java)
         startActivity(intent)
     }
