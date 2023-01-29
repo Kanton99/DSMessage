@@ -212,18 +212,28 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     /**
      * Prompts the user for permission to use the device location.
      */
+    @SuppressLint("NewApi")
     private fun getPermissions() {
         val neededPermissions = arrayListOf<String>()
+
+
+        //Foreground location
         when (PackageManager.PERMISSION_GRANTED) {
             ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION) -> {
                 locationPermissionGranted = true
                 val intent = Intent(this,BackgroundLocation::class.java)
                 startService(intent)
                 bindService(intent,locationConnection, BIND_AUTO_CREATE)
-            }
-            else -> neededPermissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
-        }
 
+                if(!backgroundPermission){
+                    requestBackgroundLocation()
+                }
+            }
+            else -> {
+                neededPermissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
+            }
+        }
+        //Notification
         when (PackageManager.PERMISSION_GRANTED) {
             ContextCompat.checkSelfPermission(this,Manifest.permission.POST_NOTIFICATIONS) -> {
                 notificationPermissionGranted = true
@@ -246,14 +256,25 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         }
 
-        when (PackageManager.PERMISSION_GRANTED){
-            ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_BACKGROUND_LOCATION)->{
-                backgroundPermission = true
-            }else -> neededPermissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-        }
         if(neededPermissions.isNotEmpty()){
             ActivityCompat.requestPermissions(this,neededPermissions.toTypedArray(),
                 PERMISSION_REQUEST)
+        }
+    }
+
+    @SuppressLint("NewApi")
+    private fun requestBackgroundLocation() {
+        if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
+            AlertDialog.Builder(this)
+                .setTitle(R.string.app_name)
+                .setMessage("The app needs access to your location in backgroud to work when you are not using it")
+                .setPositiveButton(R.string.ok) { _, _ ->
+                    ActivityCompat.requestPermissions(
+                        this, arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION),
+                        PERMISSION_REQUEST
+                    )
+                }.setNegativeButton(R.string.cancel) { _, _ -> }
+                .show()
         }
     }
 
@@ -276,9 +297,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                         startService(intent)
                         bindService(intent,locationConnection, BIND_AUTO_CREATE)
                         updateLocationUI()
+                        requestBackgroundLocation()
                     }
                     if(Manifest.permission.POST_NOTIFICATIONS in permissions) {
                         notificationPermissionGranted = grantResults[permissions.indexOf(Manifest.permission.POST_NOTIFICATIONS)] == PackageManager.PERMISSION_GRANTED
+                    }
+                    if(Manifest.permission.ACCESS_BACKGROUND_LOCATION in permissions){
+                        val it = permissions.indexOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                        backgroundPermission = grantResults[it] == PackageManager.PERMISSION_GRANTED
                     }
                 }
             }
