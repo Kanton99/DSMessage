@@ -36,7 +36,7 @@ class MessageStore : Service() {
     lateinit var messages: MutableMap<Int,Message>
     //Firebase realtime database instance
     private lateinit var database: FirebaseDatabase
-    private var user:String? = null
+    var user:String? = null
 
     private var TAG :String = "Message Store"
     private var DISTANCE:Float=10f//meters
@@ -69,7 +69,7 @@ class MessageStore : Service() {
                         val value = child.getValue(Message::class.java)!!
                         val key = value.msgID
                         messages[key] = value
-                        lateId = messages.size
+                        lateId = if(key>lateId) key+1 else lateId
                     }
                 )
             }
@@ -196,4 +196,12 @@ class MessageStore : Service() {
         }
     }
 
+    fun delete(msgID:Int){
+        var path: String = "Messages/Msg"+msgID
+        FirebaseDatabase.getInstance().getReference(path).removeValue()
+
+        messages.remove(msgID)
+        val keys = messages.keys.sorted()
+        lateId = if(keys.isNotEmpty()) keys.last()+1 else 0
+    }
 }

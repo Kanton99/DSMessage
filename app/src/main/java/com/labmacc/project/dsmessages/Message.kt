@@ -1,7 +1,9 @@
 package com.labmacc.project.dsmessages
 
-import com.google.android.gms.maps.model.LatLng
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 
+@Parcelize
 data class Message(
     val text: String = "",
     val lat: Double = 0.0,
@@ -10,4 +12,4 @@ data class Message(
     var dwn: Int = 0,
     var uID: String? = "",
     var msgID: Int = 0
-    )
+    ) : Parcelable

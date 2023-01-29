@@ -19,6 +19,7 @@ import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.location.Location
 import android.os.Build
@@ -27,8 +28,11 @@ import android.os.IBinder
 import android.os.Looper
 import android.provider.Settings
 import android.util.Log
+import android.view.View
+import android.widget.Button
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.AppCompatButton
 import androidx.appcompat.widget.AppCompatImageButton
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -88,13 +92,14 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+
         // Retrieve location and camera position from saved instance state.
         if (savedInstanceState != null) {
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 lastKnownLocation = savedInstanceState.getParcelable(KEY_LOCATION, Location::class.java)
-                cameraPosition = savedInstanceState.getParcelable(KEY_CAMERA_POSITION, CameraPosition::class.java)
+                cameraPosition = savedInstanceState.getParcelable(KEY_CAMERA_POSITION,CameraPosition::class.java)
 
-            }else{
+            } else {
                 lastKnownLocation = savedInstanceState.getParcelable(KEY_LOCATION)
                 cameraPosition = savedInstanceState.getParcelable(KEY_CAMERA_POSITION)
             }
@@ -103,6 +108,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         // Retrieve the content view that renders the map.
         setContentView(R.layout.activity_maps)
+
+        //add layout functionalities
+        button = findViewById(R.id.placeMessage)
+        button.setOnClickListener {
+            val writeMessage = Intent(this, WriteMessage::class.java)
+            writeMessage.putExtra("Lat", lastKnownLocation?.latitude)
+            writeMessage.putExtra("Lng", lastKnownLocation?.longitude)
+            this.startActivity(writeMessage)
+        }
+
+        val mMsgButton = findViewById<Button>(R.id.my_msg_button)
+        mMsgButton.setOnClickListener {
+            openMyMessages(it)
+        }
 
         placed = mutableListOf()
         // Prompt the user for permission.
@@ -117,41 +136,39 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         mapFragment?.getMapAsync(this)
 
         //location Callback
-        locationCallback = object : LocationCallback(){
+        locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 locationResult
-                    for (location in locationResult.locations){
-                        lastKnownLocation = location
-                        if (lastKnownLocation != null) {
-                            val pos = LatLng(lastKnownLocation!!.latitude,
-                                lastKnownLocation!!.longitude)
-                            map?.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                                pos, DEFAULT_ZOOM.toFloat()))
-                            if(mBound){
-                                mService.lastLocation = pos
-                            }
-                            updateMap()
+                for (location in locationResult.locations) {
+                    lastKnownLocation = location
+                    if (lastKnownLocation != null) {
+                        val pos = LatLng(
+                            lastKnownLocation!!.latitude,
+                            lastKnownLocation!!.longitude
+                        )
+                        map?.moveCamera(
+                            CameraUpdateFactory.newLatLngZoom(
+                                pos, DEFAULT_ZOOM.toFloat()
+                            )
+                        )
+                        if (mBound) {
+                            mService.lastLocation = pos
                         }
+                        updateMap()
                     }
                 }
             }
+        }
 
         //SignIn Activity
-        val signIn = Intent(this,FirebaseUIActivity::class.java)
+        val signIn = Intent(this, FirebaseUIActivity::class.java)
         this.startActivity(signIn)
 
         //Bind the msgStore Service
-        Intent(this, MessageStore::class.java).also{
-            intent -> bindService(intent,msgStrConnection, BIND_AUTO_CREATE)
-            }
-
-        button = findViewById(R.id.placeMessage)
-        button.setOnClickListener{
-            val writeMessage = Intent(this,WriteMessage::class.java)
-            writeMessage.putExtra("Lat",lastKnownLocation?.latitude)
-            writeMessage.putExtra("Lng",lastKnownLocation?.longitude)
-            this.startActivity(writeMessage)
+        Intent(this, MessageStore::class.java).also { intent ->
+            bindService(intent, msgStrConnection, BIND_AUTO_CREATE)
         }
+
     }
 
     @SuppressLint("NewApi")
@@ -195,6 +212,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onResume(){
         super.onResume()
         if (requestingLocationUpdates) startLocationUpdates()
+        if(map!=null) updateMap()
     }
 
     override fun onDestroy() {
@@ -267,6 +285,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         }
 
+        when (PackageManager.PERMISSION_GRANTED){
+            ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_BACKGROUND_LOCATION)->{
+                backgroundPermission = true
+            }else -> neededPermissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        }
         if(neededPermissions.isNotEmpty()){
             ActivityCompat.requestPermissions(this,neededPermissions.toTypedArray(),
                 PERMISSION_REQUEST)
@@ -333,11 +356,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun updateMap(){
         if(map!=null) {
+            map!!.clear()
             mService.messages.forEach { entry ->
-                if (entry.key !in placed) {
-                    map?.addMarker(MarkerOptions().position(LatLng(entry.value.lat,entry.value.lng)))
-                    placed.add(entry.key)
-                }
+                    val marker = map!!.addMarker(MarkerOptions()
+                        .position(LatLng(entry.value.lat,entry.value.lng))
+                    )
             }
         }
         if(lastKnownLocation!=null){
@@ -353,6 +376,11 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         private const val KEY_CAMERA_POSITION = "camera_position"
         private const val KEY_LOCATION = "location"
 
+    }
+
+    fun openMyMessages(view: View){
+        val intent = Intent(this,MyMessages::class.java)
+        startActivity(intent)
     }
 
 }

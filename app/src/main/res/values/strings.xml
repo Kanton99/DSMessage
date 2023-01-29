@@ -16,4 +16,10 @@
     <string name="permission_notification_rationale">Enable app\'s access to notification in system settings</string>
     <string name="ok">OK</string>
     <string name="cancel">CANCEL</string>
+    <string name="button_to_place_a_new_message">Button to place a new message</string>
+    <string name="settings">Settings</string>
+    <string name="my_messages">My messages</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="MessageExtra">Message</string>
 </resources>
