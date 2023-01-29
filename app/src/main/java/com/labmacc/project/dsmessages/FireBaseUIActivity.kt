@@ -25,11 +25,6 @@ class FirebaseUIActivity : AppCompatActivity() {
         this.onSignInResult(res)
     }
 
-    override fun onCreate(savedInstanceState: Bundle?, persistentState: PersistableBundle?) {
-        super.onCreate(savedInstanceState, persistentState)
-
-    }
-
     public override fun onStart() {
         super.onStart()
         Log.i(tag, "Login activity started")

@@ -103,7 +103,7 @@ class MessageStore : Service() {
 
     override fun onBind(intent: Intent): IBinder? {
         // A client is binding to the service with bindService()
-        Log.i(TAG,"Service binded to ${intent.toString()}")
+        Log.i(TAG,"Service binded to $intent")
         return sBinder
     }
 

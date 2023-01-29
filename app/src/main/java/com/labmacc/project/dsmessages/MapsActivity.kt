@@ -146,7 +146,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
 
         mHandler = Handler()
-        startUIUpdate();
+        startUIUpdate()
     }
 
     var mStatusChecker: Runnable = object : Runnable {
