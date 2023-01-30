@@ -325,20 +325,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             return
         }
         try {
+            map?.uiSettings?.isTiltGesturesEnabled = false
+            map?.uiSettings?.isScrollGesturesEnabled = false
+            map?.uiSettings?.isZoomControlsEnabled = true
+            map?.setMinZoomPreference(MIN_ZOOM.toFloat())
+            map?.setMaxZoomPreference(MAX_ZOOM.toFloat())
+            map?.uiSettings?.isRotateGesturesEnabled = true
             if (locationPermissionGranted) {
                 map?.isMyLocationEnabled = true
                 map?.uiSettings?.isMyLocationButtonEnabled = true
-                map?.uiSettings?.isTiltGesturesEnabled = false
-                map?.uiSettings?.isScrollGesturesEnabled = false
-                map?.uiSettings?.isZoomControlsEnabled = false
-                map?.setMinZoomPreference(DEFAULT_ZOOM.toFloat())
-                map?.setMaxZoomPreference(DEFAULT_ZOOM.toFloat())
             } else {
                 map?.isMyLocationEnabled = false
                 map?.uiSettings?.isMyLocationButtonEnabled = false
-                map?.uiSettings?.isTiltGesturesEnabled = false
-                map?.uiSettings?.isScrollGesturesEnabled = false
-                map?.uiSettings?.isZoomControlsEnabled = false
                 lastKnownLocation = null
                 //getPermissions()
             }
@@ -355,11 +353,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 pos = LatLng(lastKnownLocation!!.latitude, lastKnownLocation!!.longitude)
             }
             if (map != null) {
-                map!!.moveCamera(CameraUpdateFactory.newLatLngZoom(
-                    pos,
-                    DEFAULT_ZOOM
-                ))
-//                map!!.clear()
+                map!!.moveCamera(CameraUpdateFactory.newLatLng(pos))
                 range.center = pos
                 messageStore.messages.forEach { entry ->
                     if(entry.key !in markers.keys) {
@@ -386,6 +380,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     companion object {
         private val TAG = MapsActivity::class.java.simpleName
         private const val DEFAULT_ZOOM = 20f
+        private const val MIN_ZOOM = 19f
+        private const val MAX_ZOOM = 30f
         private const val DELAY: Long= 100
         private const val PERMISSION_REQUEST = 1
         // Keys for storing activity state.
