@@ -98,6 +98,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     //Update UI
     private lateinit var mHandler: Handler
+    private lateinit var markers:MutableMap<Int,Marker>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -146,6 +147,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
 
         mHandler = Handler()
+        markers = mutableMapOf()
         startUIUpdate()
     }
 
@@ -192,7 +194,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
      */
     override fun onMapReady(map: GoogleMap) {
         this.map = map
-
+        range = map.addCircle(
+            CircleOptions().center(LatLng(0.0, 0.0)).radius(10.0).strokeColor(Color.BLUE)
+                .fillColor(Color.TRANSPARENT))
         updateLocationUI()
 
     }
@@ -351,21 +355,29 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 pos = LatLng(lastKnownLocation!!.latitude, lastKnownLocation!!.longitude)
             }
             if (map != null) {
-                map!!.clear()
                 map!!.moveCamera(CameraUpdateFactory.newLatLngZoom(
                     pos,
                     DEFAULT_ZOOM
                 ))
-                range = map!!.addCircle(
-                    CircleOptions().center(LatLng(0.0, 0.0)).radius(10.0).strokeColor(Color.BLUE)
-                        .fillColor(Color.TRANSPARENT)
-                        .center(pos)
-                )
+//                map!!.clear()
+                range.center = pos
                 messageStore.messages.forEach { entry ->
-                    val marker = map!!.addMarker(
-                        MarkerOptions()
-                            .position(LatLng(entry.value.lat, entry.value.lng))
-                    )
+                    if(entry.key !in markers.keys) {
+                        val marker = map!!.addMarker(
+                            MarkerOptions()
+                                .position(LatLng(entry.value.lat, entry.value.lng))
+                                .title(entry.value.msgID.toString())
+                        )
+                        markers[entry.key] = marker!!
+                    }
+                }
+                val deleted = markers.keys.subtract(messageStore.messages.keys)
+                if(deleted.isNotEmpty()){
+                    deleted.toList().forEach{
+                        val marker = markers[it]
+                        marker?.remove()
+                        markers.remove(it)
+                    }
                 }
             }
         }
